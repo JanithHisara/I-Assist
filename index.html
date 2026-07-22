@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I Assist (Pvt) Ltd — PCB Design, Fabrication & Assembly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest">
+  // Initialize Lucide Icons
+  lucide.createIcons();
+
+  // Text Reveal Observer
+  const revealTextEls = document.querySelectorAll('.reveal-text');
+  const textIo = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){ 
+        e.target.classList.add('in'); 
+        
+        // Stagger children
+        const spans = e.target.querySelectorAll(':scope > span');
+        spans.forEach((span, i) => {
+           span.style.transitionDelay = `${i * 0.15}s`;
+        });
+        
+        textIo.unobserve(e.target); 
+      }
+    });
+  }, {threshold:0.1});
+  revealTextEls.forEach(el=>textIo.observe(el));
+
+
+  // Custom Cursor Logic
+  const cursorDot = document.getElementById('cursor-dot');
+  const cursorRing = document.getElementById('cursor-ring');
+  const cursorGlow = document.getElementById('cursor-glow');
+
+  let mouseX = 0, mouseY = 0;
+  let ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    
+    // Dot follows immediately
+    cursorDot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+    // Glow follows immediately
+    cursorGlow.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+    
+    // 3D Tilt for Hero Art
+    const heroArt = document.querySelector('.hero-art svg');
+    if (heroArt) {
+      const rect = heroArt.getBoundingClientRect();
+      const artX = rect.left + rect.width / 2;
+      const artY = rect.top + rect.height / 2;
+      const deltaX = (mouseX - artX) / 15;
+      const deltaY = (mouseY - artY) / 15;
+      heroArt.style.transform = `rotateX(${-deltaY}deg) rotateY(${deltaX}deg)`;
+    }
+  });
+
+  // Ring follow with requestAnimationFrame for smooth delay
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.2;
+    ringY += (mouseY - ringY) * 0.2;
+    cursorRing.style.transform = `translate(${ringX}px, ${ringY}px)`;
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  // Hover states for cursor
+  const interactiveEls = document.querySelectorAll('a, button, input, textarea, select, .glass-card, .showcase-item');
+  interactiveEls.forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursorRing.style.width = '48px';
+      cursorRing.style.height = '48px';
+      cursorRing.style.borderColor = 'var(--signal-bright)';
+      cursorRing.style.backgroundColor = 'rgba(20, 184, 166, 0.1)';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursorRing.style.width = '32px';
+      cursorRing.style.height = '32px';
+      cursorRing.style.borderColor = 'var(--copper-bright)';
+      cursorRing.style.backgroundColor = 'transparent';
+    });
+  });
+
+</script>
+<style>
+  :root{
+    --void: #040b16;
+    --panel: #09162a;
+    --panel-raised: #10223b;
+    --panel-line: #1a3457;
+    --copper: #0891b2;
+    --copper-bright: #06b6d4;
+    --gold: #38bdf8;
+    --signal: #0d9488;
+    --signal-bright: #14b8a6;
+    --ink: #f8fafc;
+    --ink-muted: #94a3b8;
+    --ink-dim: #475569;
+    --danger-ok: #14b8a6;
+    --radius: 3px;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:var(--void);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ambient board texture */
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(6,182,212,0.09) 1px, transparent 1px);
+    background-size:34px 34px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  h1,h2,h3{
+    font-family:'Outfit', sans-serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+
+  .mono{font-family:'JetBrains Mono', monospace;}
+
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--copper-bright);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .eyebrow::before{
+    content:'';
+    width:22px;
+    height:1px;
+    background:var(--copper);
+  }
+
+  a{color:inherit;text-decoration:none;}
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px;
+    position:relative;
+    z-index:1;
+  }
+
+  /* ---------- NAV ---------- */
+  header{
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:100;
+    background:rgba(4,11,22,0.78);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--panel-line);
+  }
+  nav{
+    max-width:1180px;
+    margin:0 auto;
+    padding:18px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .logo{
+    display:flex;
+    align-items:center;
+    font-family:'Outfit', sans-serif;
+    font-weight:600;
+    font-size:19px;
+    letter-spacing:-0.01em;
+  }
+
+  .navlinks{
+    display:flex;
+    gap:36px;
+    font-size:14px;
+    color:var(--ink-muted);
+  }
+  .navlinks a{transition:color .25s;}
+  .navlinks a:hover{color:var(--signal-bright);}
+
+  .btn{
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.03em;
+    padding:11px 20px;
+    border-radius:var(--radius);
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    border:1px solid transparent;
+    transition:all .25s;
+  }
+  .btn-primary{
+    background:var(--copper);
+    color:#040b16;
+    font-weight:600;
+  }
+  .btn-primary:hover{background:var(--copper-bright); transform:translateY(-1px);}
+  .btn-ghost{
+    border-color:var(--panel-line);
+    color:var(--ink-muted);
+  }
+  .btn-ghost:hover{border-color:var(--signal); color:var(--signal-bright);}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    padding:200px 0 90px;
+    overflow:hidden;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1.05fr 0.95fr;
+    gap:60px;
+    align-items:center;
+  }
+  .hero h1{
+    font-size:clamp(38px, 5vw, 62px);
+    line-height:1.06;
+    margin-bottom:26px;
+  }
+  .hero h1 .accent{color:var(--copper-bright);}
+  .hero p.lead{
+    font-size:17px;
+    color:var(--ink-muted);
+    max-width:480px;
+    margin-bottom:36px;
+  }
+  .hero-ctas{display:flex; gap:14px; margin-bottom:52px;}
+
+  .hero-meta{
+    display:flex;
+    gap:34px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-dim);
+  }
+  .hero-meta strong{
+    display:block;
+    color:var(--signal-bright);
+    font-size:20px;
+    font-family:'Outfit', sans-serif;
+    margin-bottom:2px;
+  }
+
+  .hero-art{
+    position:relative;
+    aspect-ratio:1/1;
+  }
+  .hero-art svg{width:100%; height:100%;}
+
+  .trace-line{
+    fill:none;
+    stroke:var(--panel-line);
+    stroke-width:2;
+  }
+  .trace-line.active{
+    stroke:var(--copper);
+    stroke-dasharray:6 500;
+    stroke-dashoffset:0;
+    animation:draw 2.6s ease forwards;
+  }
+  @keyframes draw{
+    from{stroke-dasharray: var(--len) var(--len); stroke-dashoffset:var(--len);}
+    to{stroke-dasharray:var(--len) var(--len); stroke-dashoffset:0;}
+  }
+  .pad{fill:var(--panel-raised); stroke:var(--panel-line); stroke-width:1.5;}
+  .pad.lit{fill:var(--gold); stroke:var(--copper-bright); filter:drop-shadow(0 0 6px rgba(232,193,112,.6));}
+
+  .signal-dot{
+    fill:var(--signal-bright);
+    filter:drop-shadow(0 0 4px var(--signal-bright));
+  }
+
+  /* ---------- TICKER ---------- */
+  .ticker-band{
+    border-top:1px solid var(--panel-line);
+    border-bottom:1px solid var(--panel-line);
+    background:var(--panel);
+    overflow:hidden;
+    padding:16px 0;
+  }
+  .ticker-track{
+    display:flex;
+    width:max-content;
+    gap:0;
+    animation:scroll-left 32s linear infinite;
+  }
+  .ticker-item{
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color:var(--ink-muted);
+    padding:0 34px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    white-space:nowrap;
+    border-right:1px solid var(--panel-line);
+  }
+  .ticker-item b{color:var(--signal-bright); font-weight:600;}
+  @keyframes scroll-left{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+  }
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{
+    padding:120px 0;
+    position:relative;
+  }
+  .section-head{
+    max-width:620px;
+    margin-bottom:64px;
+  }
+  .section-head h2{
+    font-size:clamp(28px,3.4vw,40px);
+    line-height:1.15;
+  }
+  .section-head p{
+    color:var(--ink-muted);
+    margin-top:16px;
+    font-size:15.5px;
+  }
+
+  .reveal{
+    opacity:0;
+    transform:translateY(28px);
+    transition:opacity .7s ease, transform .7s ease;
+  }
+  .reveal.in{opacity:1; transform:translateY(0);}
+
+  /* ---------- CAPABILITIES / LAYER STACK ---------- */
+  .stack{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+  }
+  .layer-card{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:var(--radius);
+    padding:28px 22px;
+    position:relative;
+    transition:transform .35s ease, border-color .35s ease, box-shadow .35s ease;
+  }
+  .layer-card:hover{
+    transform:translateY(-10px);
+    border-color:var(--copper);
+    box-shadow:0 20px 40px -20px rgba(206,129,71,0.35);
+  }
+  .layer-card .layer-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--ink-dim);
+    letter-spacing:.1em;
+    margin-bottom:18px;
+    display:block;
+  }
+  .layer-card h3{
+    font-size:19px;
+    margin-bottom:12px;
+  }
+  .layer-card p{
+    font-size:14px;
+    color:var(--ink-muted);
+  }
+  .layer-icon{
+    width:38px;height:38px;
+    margin-bottom:20px;
+    stroke:var(--copper-bright);
+    fill:none;
+    stroke-width:1.4;
+  }
+
+  /* ---------- PROCESS ---------- */
+  .process{
+    position:relative;
+  }
+  .process-line{
+    position:absolute;
+    top:26px; left:0; right:0;
+    height:1px;
+    background:var(--panel-line);
+    z-index:0;
+  }
+  .process-line-fill{
+    position:absolute;
+    top:0;left:0;
+    height:100%;
+    width:0%;
+    background:var(--copper);
+    transition:width 1.6s ease;
+  }
+  .process-steps{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:16px;
+    position:relative;
+    z-index:1;
+  }
+  .step{
+    text-align:left;
+  }
+  .step-node{
+    width:52px;height:52px;
+    border-radius:50%;
+    background:var(--panel);
+    border:1.5px solid var(--panel-line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color:var(--ink-dim);
+    margin-bottom:22px;
+    transition:all .5s ease;
+  }
+  .step.in .step-node{
+    border-color:var(--copper);
+    color:var(--copper-bright);
+    box-shadow:0 0 0 5px rgba(206,129,71,0.12);
+  }
+  .step h4{
+    font-family:'Outfit', sans-serif;
+    font-size:16px;
+    margin-bottom:8px;
+    font-weight:600;
+  }
+  .step p{
+    font-size:13.5px;
+    color:var(--ink-muted);
+  }
+
+  /* ---------- SPECS ---------- */
+  .specs-panel{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .specs-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 26px;
+    border-bottom:1px solid var(--panel-line);
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-dim);
+  }
+  .specs-header .dots{display:flex; gap:6px;}
+  .specs-header .dots span{width:8px;height:8px;border-radius:50%;background:var(--panel-line);}
+  .specs-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+  }
+  .spec-cell{
+    padding:26px;
+    border-right:1px solid var(--panel-line);
+    border-bottom:1px solid var(--panel-line);
+  }
+  .spec-cell:nth-child(3n){border-right:none;}
+  .spec-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-dim);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:10px;
+  }
+  .spec-value{
+    font-family:'Outfit', sans-serif;
+    font-size:24px;
+    color:var(--signal-bright);
+    font-weight:600;
+  }
+  .spec-value span{
+    font-size:13px;
+    color:var(--ink-muted);
+    font-family:'JetBrains Mono', monospace;
+    margin-left:4px;
+  }
+
+  /* ---------- CASE / QUOTE ---------- */
+  .quote-panel{
+    border:1px dashed var(--panel-line);
+    border-radius:var(--radius);
+    padding:52px;
+    position:relative;
+    background:linear-gradient(180deg, rgba(76,175,125,0.04), transparent);
+  }
+  .quote-panel::before,.quote-panel::after,
+  .quote-panel .corner-br, .quote-panel .corner-bl{
+    content:'';
+    position:absolute;
+    width:16px;height:16px;
+    border:2px solid var(--copper);
+  }
+  .quote-panel::before{top:-1px;left:-1px;border-right:none;border-bottom:none;}
+  .quote-panel::after{top:-1px;right:-1px;border-left:none;border-bottom:none;}
+  .quote-panel .corner-bl{bottom:-1px;left:-1px;border-right:none;border-top:none;}
+  .quote-panel .corner-br{bottom:-1px;right:-1px;border-left:none;border-top:none;}
+  .quote-text{
+    font-family:'Outfit', sans-serif;
+    font-size:clamp(20px,2.4vw,27px);
+    line-height:1.5;
+    max-width:820px;
+    margin-bottom:26px;
+  }
+  .quote-attr{
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+    color:var(--ink-muted);
+  }
+  .quote-attr b{color:var(--ink);}
+
+  /* ---------- CONTACT ---------- */
+  .contact-grid{
+    display:grid;
+    grid-template-columns:0.9fr 1.1fr;
+    gap:60px;
+  }
+  .contact-info h2{font-size:clamp(28px,3.2vw,38px); margin-bottom:18px;}
+  .contact-info p{color:var(--ink-muted); font-size:15.5px; margin-bottom:32px; max-width:400px;}
+  .contact-detail{
+    display:flex;
+    gap:14px;
+    margin-bottom:18px;
+    font-size:14.5px;
+  }
+  .contact-detail .k{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--ink-dim);
+    min-width:80px;
+    font-size:12.5px;
+    padding-top:2px;
+  }
+
+  form.brief{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    padding:36px;
+    position:relative;
+  }
+  .brief::before,.brief::after{
+    content:'';
+    position:absolute;
+    width:14px;height:14px;
+    border:2px solid var(--copper);
+  }
+  .brief::before{top:-1px;left:-1px;border-right:none;border-bottom:none;}
+  .brief::after{bottom:-1px;right:-1px;border-left:none;border-top:none;}
+
+  .field{margin-bottom:22px;}
+  .field label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin-bottom:9px;
+  }
+  .field input, .field textarea, .field select{
+    width:100%;
+    background:var(--void);
+    border:1px solid var(--panel-line);
+    border-radius:3px;
+    padding:12px 14px;
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    font-size:14.5px;
+    transition:border-color .25s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{
+    outline:none;
+    border-color:var(--signal);
+  }
+  .field textarea{resize:vertical; min-height:90px;}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    border-top:1px solid var(--panel-line);
+    padding:56px 0 34px;
+  }
+  .footer-grid{
+    display:grid;
+    grid-template-columns:1.4fr 1fr 1fr 1fr;
+    gap:40px;
+    margin-bottom:50px;
+  }
+  .footer-grid h4{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin-bottom:16px;
+  }
+  .footer-grid a{
+    display:block;
+    font-size:14px;
+    color:var(--ink-muted);
+    margin-bottom:10px;
+    transition:color .2s;
+  }
+  .footer-grid a:hover{color:var(--signal-bright);}
+  .footer-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:24px;
+    border-top:1px solid var(--panel-line);
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--ink-dim);
+  }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:1fr;}
+    .hero-art{max-width:420px; margin:0 auto;}
+    .stack{grid-template-columns:1fr 1fr;}
+    .process-steps{grid-template-columns:1fr 1fr;}
+    .process-line{display:none;}
+    .specs-grid{grid-template-columns:1fr 1fr;}
+    .spec-cell:nth-child(2n){border-right:none;}
+    .spec-cell:nth-child(3n){border-right:1px solid var(--panel-line);}
+    .contact-grid{grid-template-columns:1fr;}
+    .footer-grid{grid-template-columns:1fr 1fr;}
+    .navlinks{display:none;}
+  }
+  @media (max-width:560px){
+    .stack{grid-template-columns:1fr;}
+    .process-steps{grid-template-columns:1fr;}
+    .specs-grid{grid-template-columns:1fr;}
+    .spec-cell{border-right:none !important;}
+    .field-row{grid-template-columns:1fr;}
+    .footer-grid{grid-template-columns:1fr;}
+    .hero{padding-top:150px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  /* --- Advanced Animations --- */
+  .reveal-text {
+    display: inline-block;
+    overflow: hidden;
+  }
+  .reveal-text span {
+    display: inline-block;
+    transform: translateY(100%);
+    opacity: 0;
+    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s ease;
+  }
+  .reveal-text.in span {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  .glass-card {
+    background: rgba(9, 22, 42, 0.4);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 32px;
+    transition: transform 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+  .glass-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--copper-bright);
+    box-shadow: 0 20px 40px -10px rgba(6, 182, 212, 0.3);
+  }
+
+  /* --- Showcase Section --- */
+  .showcase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 60px;
+  }
+  .showcase-item {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+  }
+  .showcase-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+  }
+  .showcase-item:hover img {
+    transform: scale(1.05);
+  }
+  .showcase-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(4,11,22,0.9) 0%, transparent 60%);
+    display: flex;
+    align-items: flex-end;
+    padding: 24px;
+  }
+  .showcase-overlay h3 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--ink);
+  }
+
+
+  /* --- Custom Cursor --- */
+  body {
+    cursor: none;
+  }
+  a, button, select, input, textarea {
+    cursor: none !important;
+  }
+  #cursor-dot {
+    position: fixed;
+    top: 0; left: 0;
+    width: 6px; height: 6px;
+    background-color: var(--signal-bright);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10000;
+    transform: translate(-50%, -50%);
+  }
+  #cursor-ring {
+    position: fixed;
+    top: 0; left: 0;
+    width: 32px; height: 32px;
+    border: 1.5px solid var(--copper-bright);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s, background-color 0.2s;
+  }
+  #cursor-glow {
+    position: fixed;
+    top: 0; left: 0;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease-out;
+  }
+  
+  /* --- 3D Parallax on Hero Art --- */
+  .hero-art {
+    perspective: 1000px;
+  }
+  .hero-art svg {
+    transition: transform 0.1s ease-out;
+    transform-style: preserve-3d;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+<div id="cursor-glow"></div>
+
+
+<header>
+  <nav>
+    <div class="logo">I Assist (Pvt) Ltd</div>
+    <div class="navlinks">
+      <a href="#capabilities">Capabilities</a>
+      <a href="#process">Process</a>
+      <a href="#specs">Specs</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <a href="#contact" class="btn btn-primary">Request a quote</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Design · Fabrication · Assembly</div>
+        <h1 class="reveal-text"><span>Boards built to hold a signal,</span><br><span>not just a <span class="accent">shape.</span></span></h1>
+        <p class="lead">We take products from a rough schematic to a tested, populated board — handling layout, sourcing, fabrication and assembly under one roof, so nothing gets lost in translation between engineers and factories.</p>
+        <div class="hero-ctas">
+          <a href="#contact" class="btn btn-primary">Start a project →</a>
+          <a href="#capabilities" class="btn btn-ghost">See capabilities</a>
+        </div>
+        <div class="hero-meta">
+          <div><strong>48hr</strong>prototype turnaround</div>
+          <div><strong>0.075mm</strong>min. trace/space</div>
+          <div><strong>1–32</strong>layer stackups</div>
+        </div>
+      </div>
+
+      <div class="hero-art">
+        <svg viewBox="0 0 420 420" fill="none" style="filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.15));">
+          <!-- background grid -->
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="0.5" fill="var(--panel-line)"/>
+          </pattern>
+          <rect width="420" height="420" fill="url(#grid)" />
+
+          <!-- board outline -->
+          <rect x="20" y="20" width="380" height="380" rx="16" stroke="var(--panel-line)" stroke-width="1.5" fill="var(--void)" fill-opacity="0.6"/>
+          
+          <!-- decorative corner markers -->
+          <path d="M20 40 L20 20 L40 20" stroke="var(--copper)" stroke-width="2" fill="none"/>
+          <path d="M400 40 L400 20 L380 20" stroke="var(--copper)" stroke-width="2" fill="none"/>
+          <path d="M20 380 L20 400 L40 400" stroke="var(--copper)" stroke-width="2" fill="none"/>
+          <path d="M400 380 L400 400 L380 400" stroke="var(--copper)" stroke-width="2" fill="none"/>
+
+          <!-- traces -->
+          <path class="trace-line active" style="--len:520; stroke-width:1.5px;" d="M20 90 H140 L165 115 V210 L190 235 H340" />
+          <path class="trace-line active" style="--len:420; animation-delay:.2s; stroke-width:1.5px;" d="M20 300 H100 L125 275 V180 L150 155 H400" />
+          <path class="trace-line active" style="--len:300; animation-delay:.5s; stroke-width:1.5px;" d="M210 20 V90 L235 115 H340 L365 140 V400" />
+          <path class="trace-line active" style="--len:260; animation-delay:.7s; stroke-width:1.5px;" d="M60 400 V330 L85 305 H210" />
+          
+          <!-- secondary data buses (fainter, faster) -->
+          <path d="M80 20 V80 L110 110 H140" stroke="var(--panel-line)" stroke-width="1" stroke-dasharray="4 4"/>
+          <path d="M400 280 H350 L320 310 V400" stroke="var(--panel-line)" stroke-width="1" stroke-dasharray="4 4"/>
+
+          <!-- CPU/MCU Complex -->
+          <!-- Outer package -->
+          <rect x="155" y="155" width="110" height="110" rx="8" fill="var(--panel)" stroke="var(--panel-line)" stroke-width="1.5"/>
+          <!-- Inner core -->
+          <rect x="170" y="170" width="80" height="80" rx="4" fill="var(--panel-raised)" stroke="var(--copper)" stroke-width="1"/>
+          <!-- Die -->
+          <rect x="190" y="190" width="40" height="40" rx="2" fill="var(--void)" stroke="var(--signal)" stroke-width="1"/>
+          
+          <!-- core connections -->
+          <path d="M170 210 H155" stroke="var(--copper)" stroke-width="1"/>
+          <path d="M250 210 H265" stroke="var(--copper)" stroke-width="1"/>
+          <path d="M210 170 V155" stroke="var(--copper)" stroke-width="1"/>
+          <path d="M210 250 V265" stroke="var(--copper)" stroke-width="1"/>
+          
+          <text x="210" y="214" text-anchor="middle" fill="var(--signal-bright)" font-family="JetBrains Mono" font-size="10" font-weight="600" letter-spacing="1">AI-CORE</text>
+
+          <!-- smart pads with rings -->
+          <g transform="translate(20, 90)">
+            <circle class="pad lit" r="6"/>
+            <circle r="10" stroke="var(--gold)" stroke-width="1" fill="none" opacity="0.5">
+               <animate attributeName="r" values="6;14;6" dur="2s" repeatCount="indefinite"/>
+               <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+          
+          <circle class="pad" cx="340" cy="235" r="5"/>
+          
+          <g transform="translate(20, 300)">
+            <circle class="pad lit" r="6"/>
+            <circle r="10" stroke="var(--gold)" stroke-width="1" fill="none" opacity="0.5">
+               <animate attributeName="r" values="6;14;6" dur="2.5s" repeatCount="indefinite"/>
+               <animate attributeName="opacity" values="0.8;0;0.8" dur="2.5s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+
+          <circle class="pad" cx="400" cy="150" r="5"/>
+          
+          <g transform="translate(365, 400)">
+            <circle class="pad lit" r="6"/>
+            <circle r="10" stroke="var(--gold)" stroke-width="1" fill="none" opacity="0.5">
+               <animate attributeName="r" values="6;14;6" dur="3s" repeatCount="indefinite"/>
+               <animate attributeName="opacity" values="0.8;0;0.8" dur="3s" repeatCount="indefinite"/>
+            </circle>
+          </g>
+
+          <circle class="pad" cx="210" cy="20" r="5"/>
+          <circle class="pad" cx="60" cy="400" r="5"/>
+
+          <!-- traveling signal dots (packets) -->
+          <!-- Data stream 1 -->
+          <circle class="signal-dot" r="2.5">
+            <animateMotion dur="3.4s" repeatCount="indefinite" path="M20 90 H140 L165 115 V210 L190 235 H340"/>
+          </circle>
+          <circle fill="var(--gold)" r="1.5">
+            <animateMotion dur="3.4s" repeatCount="indefinite" begin="0.2s" path="M20 90 H140 L165 115 V210 L190 235 H340"/>
+          </circle>
+          
+          <!-- Data stream 2 -->
+          <circle class="signal-dot" r="2.5">
+            <animateMotion dur="4.1s" repeatCount="indefinite" begin="1s" path="M20 300 H100 L125 275 V180 L150 155 H400"/>
+          </circle>
+          <circle fill="var(--gold)" r="1.5">
+            <animateMotion dur="4.1s" repeatCount="indefinite" begin="1.3s" path="M20 300 H100 L125 275 V180 L150 155 H400"/>
+          </circle>
+
+          <!-- Data stream 3 -->
+          <circle class="signal-dot" r="2.5">
+            <animateMotion dur="3.8s" repeatCount="indefinite" begin="0.6s" path="M210 20 V90 L235 115 H340 L365 140 V400"/>
+          </circle>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- TICKER -->
+  <div class="ticker-band">
+    <div class="ticker-track">
+      <div class="ticker-item"><b>2–32</b> layer stackups</div>
+      <div class="ticker-item">Rigid, flex &amp; rigid-flex</div>
+      <div class="ticker-item"><b>0.075mm</b> min trace/space</div>
+      <div class="ticker-item">Impedance-controlled routing</div>
+      <div class="ticker-item"><b>48hr</b> prototype turn</div>
+      <div class="ticker-item">IPC-A-610 Class 2/3 assembly</div>
+      <div class="ticker-item"><b>ENIG · HASL · OSP</b> finishes</div>
+      <div class="ticker-item">Full DFM &amp; sourcing support</div>
+      <!-- duplicate for seamless loop -->
+      <div class="ticker-item"><b>2–32</b> layer stackups</div>
+      <div class="ticker-item">Rigid, flex &amp; rigid-flex</div>
+      <div class="ticker-item"><b>0.075mm</b> min trace/space</div>
+      <div class="ticker-item">Impedance-controlled routing</div>
+      <div class="ticker-item"><b>48hr</b> prototype turn</div>
+      <div class="ticker-item">IPC-A-610 Class 2/3 assembly</div>
+      <div class="ticker-item"><b>ENIG · HASL · OSP</b> finishes</div>
+      <div class="ticker-item">Full DFM &amp; sourcing support</div>
+    </div>
+  </div>
+
+  <!-- CAPABILITIES -->
+  <section id="capabilities">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Capabilities</div>
+        <h2>Four disciplines, stacked into one workflow.</h2>
+        <p>Each capability below is handled in-house and reviewed against the one before it, the same way a board's copper, silkscreen and soldermask layers have to agree before anything gets etched.</p>
+      </div>
+
+      <div class="stack">
+        <div class="glass-card reveal">
+          <span class="layer-tag">L1 — SCHEMATIC</span>
+          <i data-lucide="cpu" class="layer-icon" style="color: var(--copper-bright); width:38px; height:38px; margin-bottom:20px;"></i>
+          <h3>Circuit design</h3>
+          <p>Component selection, schematic capture and simulation that catches costly mistakes before a single trace gets drawn.</p>
+        </div>
+        <div class="glass-card reveal">
+          <span class="layer-tag">L2 — LAYOUT</span>
+          <i data-lucide="network" class="layer-icon" style="color: var(--copper-bright); width:38px; height:38px; margin-bottom:20px;"></i>
+          <h3>Layout &amp; signal integrity</h3>
+          <p>Trace routing, stackup planning and impedance control tuned for the frequencies your board actually needs to carry.</p>
+        </div>
+        <div class="glass-card reveal">
+          <span class="layer-tag">L3 — FABRICATION</span>
+          <i data-lucide="layers" class="layer-icon" style="color: var(--copper-bright); width:38px; height:38px; margin-bottom:20px;"></i>
+          <h3>Fabrication sourcing</h3>
+          <p>Vetted fab partners for rigid, flex and rigid-flex boards, matched to your tolerance, material and volume needs.</p>
+        </div>
+        <div class="glass-card reveal">
+          <span class="layer-tag">L4 — ASSEMBLY</span>
+          <i data-lucide="microchip" class="layer-icon" style="color: var(--copper-bright); width:38px; height:38px; margin-bottom:20px;"></i>
+          <h3>Assembly &amp; test</h3>
+          <p>SMT and through-hole population, AOI inspection and functional test before a board ever leaves the line.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="process">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">How a project moves</div>
+        <h2>From a rough idea to a tested board.</h2>
+        <p>Five stages, run in order, each with its own review before the project is allowed to move forward.</p>
+      </div>
+
+      <div class="process">
+        <div class="process-line"><div class="process-line-fill" id="processFill"></div></div>
+        <div class="process-steps">
+          <div class="step reveal-step">
+            <div class="step-node mono">01</div>
+            <h4>Consult</h4>
+            <p>We scope requirements, constraints and target cost together with your team.</p>
+          </div>
+          <div class="step reveal-step">
+            <div class="step-node mono">02</div>
+            <h4>Schematic</h4>
+            <p>Circuit design and component sourcing, checked against availability and cost.</p>
+          </div>
+          <div class="step reveal-step">
+            <div class="step-node mono">03</div>
+            <h4>Layout</h4>
+            <p>Routing, stackup and DFM review so the design is manufacturable on the first pass.</p>
+          </div>
+          <div class="step reveal-step">
+            <div class="step-node mono">04</div>
+            <h4>Prototype</h4>
+            <p>A small batch is fabricated and assembled for bring-up and functional testing.</p>
+          </div>
+          <div class="step reveal-step">
+            <div class="step-node mono">05</div>
+            <h4>Production</h4>
+            <p>Approved designs move to volume fabrication, assembly and shipping.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- SHOWCASE -->
+  <section id="showcase">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Facilities</div>
+        <h2>Advanced Manufacturing & Labs.</h2>
+        <p>Take a look inside our high-tech assembly and engineering environments.</p>
+      </div>
+      <div class="showcase-grid">
+        <div class="showcase-item reveal">
+          <img src="assets/pcb_manufacturing.png" alt="PCB Manufacturing">
+          <div class="showcase-overlay">
+            <h3>Automated Optical Inspection</h3>
+          </div>
+        </div>
+        <div class="showcase-item reveal">
+          <img src="assets/hardware_lab.png" alt="Hardware Engineering Lab">
+          <div class="showcase-overlay">
+            <h3>Hardware Engineering Lab</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPECS -->
+  <section id="specs">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="eyebrow">Datasheet</div>
+        <h2>What the line is actually capable of.</h2>
+        <p>Real figures we design against, not marketing rounding.</p>
+      </div>
+
+      <div class="specs-panel reveal">
+        <div class="specs-header">
+          <span>SPEC_SHEET.rev4</span>
+          <div class="dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="specs-grid">
+          <div class="spec-cell">
+            <div class="spec-label">Layer count</div>
+            <div class="spec-value">2–32 <span>layers</span></div>
+          </div>
+          <div class="spec-cell">
+            <div class="spec-label">Min trace / space</div>
+            <div class="spec-value">0.075 <span>mm</span></div>
+          </div>
+          <div class="spec-cell">
+            <div class="spec-label">Min drill diameter</div>
+            <div class="spec-value">0.15 <span>mm</span></div>
+          </div>
+          <div class="spec-cell">
+            <div class="spec-label">Board thickness</div>
+            <div class="spec-value">0.2–6.0 <span>mm</span></div>
+          </div>
+          <div class="spec-cell">
+            <div class="spec-label">Surface finish</div>
+            <div class="spec-value">ENIG <span>/ HASL / OSP</span></div>
+          </div>
+          <div class="spec-cell">
+            <div class="spec-label">Assembly class</div>
+            <div class="spec-value">IPC <span>Class 2 / 3</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASE -->
+  <section>
+    <div class="wrap">
+      <div class="quote-panel reveal">
+        <span class="corner-bl"></span><span class="corner-br"></span>
+        <p class="quote-text">"We handed over a schematic and a deadline. I Assist (Pvt) Ltd came back with a routed, DFM-checked board and a working prototype nine days later — no back-and-forth on part substitutions or stackup guesses."</p>
+        <div class="quote-attr">— <b>Hardware lead</b>, industrial sensor startup</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="wrap contact-grid">
+      <div class="contact-info reveal">
+        <div class="eyebrow">Get started</div>
+        <h2>Send us the project, we'll send back a plan.</h2>
+        <p>Attach a schematic, a rough sketch, or just a description of what the board needs to do — we'll follow up with scope, timeline and cost.</p>
+        <div class="contact-detail"><span class="k mono">PHONE</span><span>077 102 8619</span></div>
+        <div class="contact-detail"><span class="k mono">ADDRESS</span><span>47A, Hill Street, Dehiwala</span></div>
+        <div class="contact-detail"><span class="k mono">HOURS</span><span>Mon–Fri, 9:00–18:00 GMT+5:30</span></div>
+      </div>
+
+      <form class="brief reveal" onsubmit="event.preventDefault(); this.querySelector('.submit-note').style.display='block';">
+        <div class="field-row">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" placeholder="Your name" required>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" placeholder="you@company.com" required>
+          </div>
+        </div>
+        <div class="field">
+          <label>Project stage</label>
+          <select>
+            <option>Just an idea</option>
+            <option>Schematic ready</option>
+            <option>Layout ready, need fabrication</option>
+            <option>Need a redesign / respin</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Project details</label>
+          <textarea placeholder="What does the board need to do? Rough size, layer count, quantity, timeline — whatever you know so far."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;">Send project brief →</button>
+        <p class="submit-note mono" style="display:none; margin-top:14px; font-size:12.5px; color:var(--signal-bright);">Brief received — we'll reply within one business day.</p>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="logo" style="margin-bottom:14px;">I Assist (Pvt) Ltd</div>
+        <p style="color:var(--ink-muted); font-size:13.5px; max-width:280px;">A design-to-assembly studio for teams who need a board to work the first time, not the fourth.</p>
+      </div>
+      <div>
+        <h4>Studio</h4>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#process">Process</a>
+        <a href="#specs">Specs</a>
+      </div>
+      <div>
+        <h4>Work with us</h4>
+        <a href="#contact">Start a project</a>
+        <a href="#contact">Request a quote</a>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <a href="tel:0771028619">077 102 8619</a>
+        <a href="#contact">47A, Hill Street, Dehiwala</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 I Assist (Pvt) Ltd</span>
+      <span>REV. 04 · DEHIWALA, LK</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:0.15});
+  revealEls.forEach(el=>io.observe(el));
+
+  // Process steps stagger + line fill
+  const steps = document.querySelectorAll('.reveal-step');
+  const fill = document.getElementById('processFill');
+  const stepIO = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        fill.style.width = '100%';
+        steps.forEach((s, i)=>{
+          setTimeout(()=> s.classList.add('in'), i*160);
+        });
+        stepIO.disconnect();
+      }
+    });
+  }, {threshold:0.3});
+  if(steps.length) stepIO.observe(document.querySelector('.process'));
+
+  // Initialize Lucide Icons
+  lucide.createIcons();
+
+  // Text Reveal Observer
+  const revealTextEls = document.querySelectorAll('.reveal-text');
+  const textIo = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){ 
+        e.target.classList.add('in'); 
+        
+        // Stagger children
+        const spans = e.target.querySelectorAll(':scope > span');
+        spans.forEach((span, i) => {
+           span.style.transitionDelay = `${i * 0.15}s`;
+        });
+        
+        textIo.unobserve(e.target); 
+      }
+    });
+  }, {threshold:0.1});
+  revealTextEls.forEach(el=>textIo.observe(el));
+
+
+  // Custom Cursor Logic
+  const cursorDot = document.getElementById('cursor-dot');
+  const cursorRing = document.getElementById('cursor-ring');
+  const cursorGlow = document.getElementById('cursor-glow');
+
+  let mouseX = 0, mouseY = 0;
+  let ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    
+    // Dot follows immediately
+    cursorDot.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+    // Glow follows immediately
+    cursorGlow.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+    
+    // 3D Tilt for Hero Art
+    const heroArt = document.querySelector('.hero-art svg');
+    if (heroArt) {
+      const rect = heroArt.getBoundingClientRect();
+      const artX = rect.left + rect.width / 2;
+      const artY = rect.top + rect.height / 2;
+      const deltaX = (mouseX - artX) / 15;
+      const deltaY = (mouseY - artY) / 15;
+      heroArt.style.transform = `rotateX(${-deltaY}deg) rotateY(${deltaX}deg)`;
+    }
+  });
+
+  // Ring follow with requestAnimationFrame for smooth delay
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.2;
+    ringY += (mouseY - ringY) * 0.2;
+    cursorRing.style.transform = `translate(${ringX}px, ${ringY}px)`;
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  // Hover states for cursor
+  const interactiveEls = document.querySelectorAll('a, button, input, textarea, select, .glass-card, .showcase-item');
+  interactiveEls.forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursorRing.style.width = '48px';
+      cursorRing.style.height = '48px';
+      cursorRing.style.borderColor = 'var(--signal-bright)';
+      cursorRing.style.backgroundColor = 'rgba(20, 184, 166, 0.1)';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursorRing.style.width = '32px';
+      cursorRing.style.height = '32px';
+      cursorRing.style.borderColor = 'var(--copper-bright)';
+      cursorRing.style.backgroundColor = 'transparent';
+    });
+  });
+
+</script>
+
+</body>
+</html>
