@@ -1,4 +1,4 @@
-// ---------- SUPABASE BACKEND SERVICE INTEGRATION ----------
+// ---------- SUPABASE & API SUBMISSION HANDLER ----------
 const SUPABASE_URL = 'https://mzzragpmkvdvnrletekn.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16enJhZ3Bta3Zkdm5ybGV0ZWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2OTAxNjAsImV4cCI6MjEwMDI2NjE2MH0.z8fGn835zUXgy1nsVBuun4DR4aFzsVKhNBiXEqQuFuc';
 
@@ -17,35 +17,46 @@ async function handleFormSubmit(event) {
   const originalBtnText = submitBtn.innerText;
   submitBtn.innerText = 'Sending...';
 
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-    setTimeout(() => {
-      submitNote.style.display = 'block';
-      submitNote.style.color = 'var(--signal-bright)';
-      submitNote.innerText = "Brief received — (Note: Please configure SUPABASE_URL & KEY to save in DB).";
-      submitBtn.disabled = false;
-      submitBtn.innerText = originalBtnText;
-      form.reset();
-    }, 500);
-    return;
-  }
+  const formData = { name, email, project_stage, details };
 
   try {
-    const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const { data, error } = await _supabase
-      .from('project_briefs')
-      .insert([{ name, email, project_stage, details }]);
+    // 1. Try Vercel Serverless Backend API
+    const response = await fetch('/api/submit-brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
 
-    if (error) throw error;
+    if (response.ok) {
+      submitNote.style.display = 'block';
+      submitNote.style.color = 'var(--signal-bright)';
+      submitNote.innerText = "Brief received — saved to database! We'll reply within one business day.";
+      form.reset();
+      return;
+    }
 
-    submitNote.style.display = 'block';
-    submitNote.style.color = 'var(--signal-bright)';
-    submitNote.innerText = "Brief received — saved to database! We'll reply within one business day.";
-    form.reset();
+    // 2. Fallback to direct client-side Supabase JS if local preview without Vercel API
+    if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+      const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data, error } = await _supabase
+        .from('project_briefs')
+        .insert([formData]);
+
+      if (error) throw error;
+
+      submitNote.style.display = 'block';
+      submitNote.style.color = 'var(--signal-bright)';
+      submitNote.innerText = "Brief received — saved to database! We'll reply within one business day.";
+      form.reset();
+      return;
+    }
+
+    throw new Error('Submission failed');
   } catch (err) {
-    console.error('Supabase submission error:', err);
+    console.error('Submission error:', err);
     submitNote.style.display = 'block';
     submitNote.style.color = '#ef4444';
-    submitNote.innerText = 'Failed to submit brief. Please check credentials or try again.';
+    submitNote.innerText = 'Failed to submit brief. Please try again.';
   } finally {
     submitBtn.disabled = false;
     submitBtn.innerText = originalBtnText;
