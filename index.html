@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/lucide@latest">
   // Initialize Lucide Icons
   lucide.createIcons();
@@ -1126,20 +1127,20 @@
         <div class="contact-detail"><span class="k mono">HOURS</span><span>Mon–Fri, 9:00–18:00 GMT+5:30</span></div>
       </div>
 
-      <form class="brief reveal" onsubmit="event.preventDefault(); this.querySelector('.submit-note').style.display='block';">
+      <form id="projectBriefForm" class="brief reveal" onsubmit="handleFormSubmit(event)">
         <div class="field-row">
           <div class="field">
             <label>Name</label>
-            <input type="text" placeholder="Your name" required>
+            <input type="text" id="briefName" placeholder="Your name" required>
           </div>
           <div class="field">
             <label>Email</label>
-            <input type="email" placeholder="you@company.com" required>
+            <input type="email" id="briefEmail" placeholder="you@company.com" required>
           </div>
         </div>
         <div class="field">
           <label>Project stage</label>
-          <select>
+          <select id="briefStage">
             <option>Just an idea</option>
             <option>Schematic ready</option>
             <option>Layout ready, need fabrication</option>
@@ -1148,7 +1149,7 @@
         </div>
         <div class="field">
           <label>Project details</label>
-          <textarea placeholder="What does the board need to do? Rough size, layer count, quantity, timeline — whatever you know so far."></textarea>
+          <textarea id="briefDetails" placeholder="What does the board need to do? Rough size, layer count, quantity, timeline — whatever you know so far."></textarea>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px;">Send project brief →</button>
         <p class="submit-note mono" style="display:none; margin-top:14px; font-size:12.5px; color:var(--signal-bright);">Brief received — we'll reply within one business day.</p>
@@ -1292,6 +1293,60 @@
       cursorRing.style.backgroundColor = 'transparent';
     });
   });
+
+  // ---------- SUPABASE INTEGRATION ----------
+  const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+  async function handleFormSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const submitNote = form.querySelector('.submit-note');
+
+    const name = document.getElementById('briefName').value;
+    const email = document.getElementById('briefEmail').value;
+    const project_stage = document.getElementById('briefStage').value;
+    const details = document.getElementById('briefDetails').value;
+
+    submitBtn.disabled = true;
+    const originalBtnText = submitBtn.innerText;
+    submitBtn.innerText = 'Sending...';
+
+    if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+      setTimeout(() => {
+        submitNote.style.display = 'block';
+        submitNote.style.color = 'var(--signal-bright)';
+        submitNote.innerText = "Brief received — (Note: Replace YOUR_SUPABASE_URL & KEY in index.html to enable DB storage).";
+        submitBtn.disabled = false;
+        submitBtn.innerText = originalBtnText;
+        form.reset();
+      }, 500);
+      return;
+    }
+
+    try {
+      const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data, error } = await _supabase
+        .from('project_briefs')
+        .insert([{ name, email, project_stage, details }]);
+
+      if (error) throw error;
+
+      submitNote.style.display = 'block';
+      submitNote.style.color = 'var(--signal-bright)';
+      submitNote.innerText = "Brief received — saved to database! We'll reply within one business day.";
+      form.reset();
+    } catch (err) {
+      console.error('Supabase submission error:', err);
+      submitNote.style.display = 'block';
+      submitNote.style.color = '#ef4444';
+      submitNote.innerText = 'Failed to submit brief. Please check credentials or try again.';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerText = originalBtnText;
+    }
+  }
 
 </script>
 
